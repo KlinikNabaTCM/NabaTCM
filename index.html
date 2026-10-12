@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,7 @@
         /* Latar Belakang Pola Islami/Zen Transparan (Opacity 3%) */
         .bg-pattern {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: -1; pointer-events: none;
         }
         body.dark-mode .bg-pattern {
@@ -343,7 +343,7 @@
                 <!-- Hiding explicit PIN for security -->
                 <p class="text-xs text-slate-500 mt-1 font-medium">Masukkan PIN Keamanan Klinik</p>
             </div>
-            <input type="password" id="admin-pwd-input" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-center text-lg tracking-widest font-black text-slate-800 dark:text-white mb-6 transition-all" placeholder="����" onkeypress="if(event.key === 'Enter') submitAdminLogin()">
+            <input type="password" id="admin-pwd-input" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-center text-lg tracking-widest font-black text-slate-800 dark:text-white mb-6 transition-all" placeholder="••••" onkeypress="if(event.key === 'Enter') submitAdminLogin()">
             <div class="flex space-x-3">
                 <button onclick="closeAdminLogin()" class="flex-1 px-4 py-3 text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold text-xs transition-colors">Batal</button>
                 <button onclick="submitAdminLogin()" class="flex-1 px-4 py-3 btn-3d bg-emerald-600 text-white rounded-xl font-extrabold text-xs">Masuk</button>
@@ -366,7 +366,73 @@
         </div>
     </div>
 
+    <!-- MODULE FIREBASE (BARU & AMAN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ⚠️ KODE KONFIGURASI FIREBASE ANDA TELAH DISISIPKAN DI SINI ⚠️
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLvxEL6LHyJibWvXgiDbGzgLhyMJqu4xE",
+            authDomain: "nabatcm.firebaseapp.com",
+            projectId: "nabatcm",
+            storageBucket: "nabatcm.firebasestorage.app",
+            messagingSenderId: "790879730377",
+            appId: "1:790879730377:web:66e413566ff76ee450eb18"
+        };
+
+        // SAFETY CATCH: Mencegah error jika apiKey masih tulisan placeholder (belum diatur)
+        const isFirebaseConfigured = !firebaseConfig.apiKey.includes("GANTI_DENGAN");
+
+        if (isFirebaseConfigured) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                const appId = 'nabatcm-default';
+
+                window.firebaseSaveData = async function(dataObj) {
+                    try {
+                        if (!auth.currentUser) return;
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clinicSettings');
+                        await setDoc(docRef, dataObj);
+                    } catch (e) {
+                        console.error("Gagal simpan ke Firebase:", e);
+                    }
+                };
+
+                window.initFirebaseListener = async function() {
+                    try {
+                        await signInAnonymously(auth);
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clinicSettings');
+                        onSnapshot(docRef, (snapshot) => {
+                            if (snapshot.exists()) {
+                                const dataObj = snapshot.data();
+                                Object.keys(dataObj).forEach(key => { if(dataObj[key]) window[key] = dataObj[key]; });
+                                window.updateGlobalUI();
+                                
+                                const currentSection = document.querySelector('.nav-link.text-emerald-600')?.dataset?.target || 'home';
+                                if(currentSection !== 'admin' && currentSection !== 'booking') window.showSection(currentSection);
+                            }
+                        });
+                    } catch (e) {
+                        console.error("Auth error:", e);
+                    }
+                };
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+            }
+        } else {
+            console.log("Firebase belum diatur (masih placeholder). Berjalan menggunakan LocalStorage memori lokal.");
+        }
+    </script>
+
     <script>
+        // Fallback functions in case Firebase module doesn't load or is disabled
+        if(typeof window.firebaseSaveData === 'undefined') window.firebaseSaveData = function(data) {};
+        if(typeof window.initFirebaseListener === 'undefined') window.initFirebaseListener = function() {};
+
         let clinicSettings = {
             name: "NabaTCM Center",
             tagline: "Solusi Sehat dan Tenang Bersama Al-Qur'an.",
@@ -521,6 +587,11 @@
             try {
                 const dataObj = { clinicSettings, visitorCount, therapistsData, servicesData, articlesData, productsData, partnersData, careersData, galleryData, testimonialsData, queueData };
                 localStorage.setItem('nabatcm_data_v8', JSON.stringify(dataObj));
+                
+                // Simpan ke Firebase secara otomatis setiap ada perubahan di Admin
+                if (typeof window.firebaseSaveData === 'function') {
+                    window.firebaseSaveData(dataObj);
+                }
             } catch (e) {}
         }
 
@@ -559,6 +630,11 @@
             updateGlobalUI();
             updateCartUI();
             showSection('home');
+            
+            // Aktifkan sinkronisasi Firebase Real-time saat web dibuka
+            if (typeof window.initFirebaseListener === 'function') {
+                window.initFirebaseListener();
+            }
         }
 
         function updateGlobalUI() {
@@ -1515,7 +1591,7 @@
                             <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-playfair font-black text-slate-800 dark:text-white">${q.time}</div>
                             <div>
                                 <h4 class="text-sm font-black text-slate-800 dark:text-white">${q.name}</h4>
-                                <p class="text-xs text-slate-500 font-bold">${q.service} � <span class="${statusColor}">${q.status}</span></p>
+                                <p class="text-xs text-slate-500 font-bold">${q.service} • <span class="${statusColor}">${q.status}</span></p>
                             </div>
                         </div>
                         <div class="flex space-x-2">
