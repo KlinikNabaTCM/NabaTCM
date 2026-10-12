@@ -507,6 +507,16 @@
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
         }
 
+        function shareToWhatsApp(text) {
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://wa.me/?text=${encodeURIComponent(text + " - ")}` + url, '_blank');
+        }
+
+        function shareToFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        }
+
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             const isDark = document.body.classList.contains('dark-mode');
@@ -938,6 +948,10 @@
                     <div class="card-3d p-8 md:p-12 rounded-[2.5rem] bg-white/95 dark:bg-slate-800/95 border border-slate-200 dark:border-slate-700 shadow-2xl">
                         <div class="flex items-center space-x-3 mb-4">
                             <span class="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xs font-black px-3 py-1 rounded-lg shadow-sm">${article.date}</span>
+                            <div class="flex space-x-2 border-l border-slate-200 dark:border-slate-700 pl-3">
+                                <button onclick="shareToWhatsApp('Baca artikel kesehatan bermanfaat dari NabaTCM: ${article.title}')" class="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center hover:scale-110 transition-transform shadow-sm" title="Bagikan ke WhatsApp"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                                <button onclick="shareToFacebook()" class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center hover:scale-110 transition-transform shadow-sm" title="Bagikan ke Facebook"><i class="fa-brands fa-facebook-f text-sm"></i></button>
+                            </div>
                         </div>
                         <h1 class="text-3xl md:text-5xl font-playfair font-black text-slate-900 dark:text-white mb-6 leading-tight">${article.title}</h1>
                         
@@ -1045,7 +1059,13 @@
                     </div>
                     <div class="p-6 flex-grow flex flex-col justify-between bg-white/90 dark:bg-slate-800/90">
                         <div>
-                            <h3 class="font-playfair font-black text-slate-900 dark:text-white text-xl leading-tight mb-2 group-hover:text-emerald-600 transition-colors">${p.name}</h3>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-playfair font-black text-slate-900 dark:text-white text-xl leading-tight group-hover:text-emerald-600 transition-colors pr-2">${p.name}</h3>
+                                <div class="flex space-x-1.5 flex-shrink-0 mt-1">
+                                    <button onclick="shareToWhatsApp('Cek herbal sunnah berkualitas ini di NabaTCM: ${p.name}')" class="text-green-500 hover:text-green-600 hover:scale-110 transition-all" title="Bagikan ke WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></button>
+                                    <button onclick="shareToFacebook()" class="text-blue-500 hover:text-blue-600 hover:scale-110 transition-all" title="Bagikan ke Facebook"><i class="fa-brands fa-facebook text-lg"></i></button>
+                                </div>
+                            </div>
                             <div class="text-emerald-600 dark:text-emerald-400 font-black text-2xl mb-3">${formatRupiah(p.price)}</div>
                             <p class="text-xs text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">${p.desc}</p>
                             <p class="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/30 border border-amber-200/50 dark:border-amber-800/50 px-2.5 py-1.5 rounded-lg inline-block mb-4 shadow-sm"><i class="fa-solid fa-check mr-1"></i>${p.benefits}</p>
@@ -1563,6 +1583,11 @@
                         <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Ikon FontAwesome</label><input type="text" id="srv-icon" value="${item.icon}" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white"></div>
                     </div>
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Deskripsi</label><textarea id="srv-desc" rows="3" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white">${item.desc}</textarea></div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Gambar Layanan (Maks 2MB)</label>
+                        <input type="file" id="srv-image" accept="image/*" class="w-full px-4 py-2.5 rounded-xl border dark:bg-slate-900 dark:text-white text-sm" onchange="updatePreviewImage('srv-image', 'srv-preview')">
+                        <img id="srv-preview" src="${item.image}" class="mt-3 w-32 h-32 object-cover rounded-xl border border-slate-200 dark:border-slate-700 ${item.image ? '' : 'hidden'}">
+                    </div>
                     <div class="flex space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <button onclick="saveService(${id})" class="btn-3d bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-extrabold">Simpan</button>
                         <button onclick="document.getElementById('admin-form-container').classList.add('hidden')" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl text-xs font-bold">Batal</button>
@@ -1573,13 +1598,14 @@
         }
 
         async function saveService(id) {
+            let base64Img = await fileToBase64('srv-image');
             const data = {
                 id: id || Date.now(),
                 title: document.getElementById('srv-title').value,
                 desc: document.getElementById('srv-desc').value,
                 priceRange: document.getElementById('srv-price').value,
                 icon: document.getElementById('srv-icon').value,
-                image: id ? servicesData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80'
+                image: base64Img ? base64Img : (id ? servicesData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80')
             };
             if(id) { const idx = servicesData.findIndex(d => d.id === id); servicesData[idx] = data; } 
             else { servicesData.push(data); }
@@ -1596,6 +1622,11 @@
                         <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Peran</label><input type="text" id="ther-role" value="${item.role}" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white"></div>
                     </div>
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Deskripsi</label><textarea id="ther-desc" rows="3" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white">${item.desc}</textarea></div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Foto Terapis</label>
+                        <input type="file" id="ther-image" accept="image/*" class="w-full px-4 py-2.5 rounded-xl border dark:bg-slate-900 dark:text-white text-sm" onchange="updatePreviewImage('ther-image', 'ther-preview')">
+                        <img id="ther-preview" src="${item.image}" class="mt-3 w-24 h-24 object-cover rounded-full border-2 border-emerald-500 ${item.image ? '' : 'hidden'}">
+                    </div>
                     <div class="flex space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <button onclick="saveTherapist(${id})" class="btn-3d bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-extrabold">Simpan</button>
                         <button onclick="document.getElementById('admin-form-container').classList.add('hidden')" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl text-xs font-bold">Batal</button>
@@ -1606,12 +1637,13 @@
         }
 
         async function saveTherapist(id) {
+            let base64Img = await fileToBase64('ther-image');
             const data = {
                 id: id || Date.now(),
                 name: document.getElementById('ther-name').value,
                 role: document.getElementById('ther-role').value,
                 desc: document.getElementById('ther-desc').value,
-                image: id ? therapistsData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80'
+                image: base64Img ? base64Img : (id ? therapistsData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80')
             };
             if(id) { const idx = therapistsData.findIndex(d => d.id === id); therapistsData[idx] = data; } 
             else { therapistsData.push(data); }
@@ -1627,6 +1659,11 @@
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Tanggal</label><input type="text" id="art-date" value="${item.date}" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white"></div>
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Ringkasan</label><input type="text" id="art-summary" value="${item.summary}" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white"></div>
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Isi</label><textarea id="art-content" rows="4" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white">${item.content}</textarea></div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Gambar Cover Artikel</label>
+                        <input type="file" id="art-image" accept="image/*" class="w-full px-4 py-2.5 rounded-xl border dark:bg-slate-900 dark:text-white text-sm" onchange="updatePreviewImage('art-image', 'art-preview')">
+                        <img id="art-preview" src="${item.image}" class="mt-3 w-48 h-32 object-cover rounded-xl border border-slate-200 dark:border-slate-700 ${item.image ? '' : 'hidden'}">
+                    </div>
                     <div class="flex space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <button onclick="saveArticle(${id})" class="btn-3d bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-extrabold">Simpan</button>
                         <button onclick="document.getElementById('admin-form-container').classList.add('hidden')" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl text-xs font-bold">Batal</button>
@@ -1637,6 +1674,7 @@
         }
 
         async function saveArticle(id) {
+            let base64Img = await fileToBase64('art-image');
             const data = {
                 id: id || Date.now(),
                 title: document.getElementById('art-title').value,
@@ -1644,7 +1682,7 @@
                 summary: document.getElementById('art-summary').value,
                 content: document.getElementById('art-content').value,
                 recommendedProductId: 1,
-                image: id ? articlesData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1542841791-1925b02a2bfb?auto=format&fit=crop&w=500&q=80'
+                image: base64Img ? base64Img : (id ? articlesData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1542841791-1925b02a2bfb?auto=format&fit=crop&w=500&q=80')
             };
             if(id) { const idx = articlesData.findIndex(d => d.id === id); articlesData[idx] = data; } 
             else { articlesData.push(data); }
@@ -1662,6 +1700,11 @@
                     </div>
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Manfaat</label><input type="text" id="prod-benefits" value="${item.benefits}" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white"></div>
                     <div><label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Deskripsi</label><textarea id="prod-desc" rows="3" class="w-full px-4 py-3 rounded-xl border dark:bg-slate-900 dark:text-white">${item.desc}</textarea></div>
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 dark:text-slate-300">Foto Produk (Maks 2MB)</label>
+                        <input type="file" id="prod-image" accept="image/*" class="w-full px-4 py-2.5 rounded-xl border dark:bg-slate-900 dark:text-white text-sm" onchange="updatePreviewImage('prod-image', 'prod-preview')">
+                        <img id="prod-preview" src="${item.image}" class="mt-3 w-32 h-32 object-cover rounded-xl border border-slate-200 dark:border-slate-700 ${item.image ? '' : 'hidden'}">
+                    </div>
                     <div class="flex space-x-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                         <button onclick="saveProduct(${id})" class="btn-3d bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-extrabold">Simpan</button>
                         <button onclick="document.getElementById('admin-form-container').classList.add('hidden')" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl text-xs font-bold">Batal</button>
@@ -1672,13 +1715,14 @@
         }
 
         async function saveProduct(id) {
+            let base64Img = await fileToBase64('prod-image');
             const data = {
                 id: id || Date.now(),
                 name: document.getElementById('prod-name').value,
                 price: document.getElementById('prod-price').value,
                 desc: document.getElementById('prod-desc').value,
                 benefits: document.getElementById('prod-benefits').value,
-                image: id ? productsData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1587049352847-81a56d773c1c?auto=format&fit=crop&w=500&q=80'
+                image: base64Img ? base64Img : (id ? productsData.find(d => d.id === id).image : 'https://images.unsplash.com/photo-1587049352847-81a56d773c1c?auto=format&fit=crop&w=500&q=80')
             };
             if(id) { const idx = productsData.findIndex(d => d.id === id); productsData[idx] = data; } 
             else { productsData.push(data); }
